@@ -1,0 +1,92 @@
+<section class="form">
+  <header class="form__header">
+    <h2 uiHeading>{{ mode() === 'edit' ? 'Edit task' : 'New task' }}</h2>
+  </header>
+
+  @switch (state()) {
+    @case ('loading') {
+      <p uiText variant="loading" class="state" role="status" aria-live="polite">
+        Loading task…
+      </p>
+    }
+
+    @case ('load-error') {
+      <div class="state" role="alert">
+        <p uiText variant="error">{{ error() }}</p>
+        <button uiButton variant="ghost" routerLink="/tasks">Back to tasks</button>
+      </div>
+    }
+
+    @default {
+      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+        <div class="field">
+          <label for="title">Title</label>
+          <input
+            id="title"
+            type="text"
+            formControlName="title"
+            maxlength="200"
+            autocomplete="off"
+            required
+          />
+          @if (form.controls.title.touched && form.controls.title.invalid) {
+            <p uiText variant="error" class="field__error">
+              @if (form.controls.title.hasError('required') || form.controls.title.hasError('blank')) {
+                Title is required.
+              } @else if (form.controls.title.hasError('maxlength')) {
+                Title must be 200 characters or fewer.
+              }
+            </p>
+          }
+        </div>
+
+        <div class="field">
+          <label for="description">Description</label>
+          <textarea
+            id="description"
+            formControlName="description"
+            rows="5"
+            maxlength="2000"
+          ></textarea>
+          @if (form.controls.description.touched && form.controls.description.hasError('maxlength')) {
+            <p uiText variant="error" class="field__error">
+              Description must be 2000 characters or fewer.
+            </p>
+          }
+        </div>
+
+        <div class="field--row">
+          <div class="field">
+            <label for="status">Status</label>
+            <select id="status" formControlName="status">
+              @for (s of statuses; track s) {
+                <option [value]="s">{{ s }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label for="due_date">Due date</label>
+            <input id="due_date" type="date" formControlName="due_date" />
+          </div>
+        </div>
+
+        @if (error()) {
+          <p uiText variant="error" role="alert">{{ error() }}</p>
+        }
+
+        <div class="form__actions">
+          <button uiButton type="submit" [disabled]="state() === 'saving'">
+            {{
+              state() === 'saving'
+                ? 'Saving…'
+                : (mode() === 'edit' ? 'Save changes' : 'Create task')
+            }}
+          </button>
+          <button uiButton variant="ghost" type="button" routerLink="/tasks">
+            Cancel
+          </button>
+        </div>
+      </form>
+    }
+  }
+</section>

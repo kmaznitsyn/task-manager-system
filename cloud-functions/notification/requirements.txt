@@ -1,0 +1,4 @@
+functions-framework>=3.8
+google-cloud-pubsub>=2.23
+requests>=2.32
+sendgrid>=6.11

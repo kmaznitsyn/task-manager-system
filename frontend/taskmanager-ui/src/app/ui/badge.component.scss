@@ -1,0 +1,15 @@
+.ui-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.8rem;
+  font-family: system-ui, sans-serif;
+  text-transform: capitalize;
+  line-height: 1.4;
+
+  &[data-tone='neutral'] { background: #e5e7eb; color: #374151; }
+  &[data-tone='info']    { background: #dbeafe; color: #1e40af; }
+  &[data-tone='warning'] { background: #fef3c7; color: #92400e; }
+  &[data-tone='success'] { background: #d1fae5; color: #065f46; }
+  &[data-tone='danger']  { background: #fee2e2; color: #991b1b; }
+}

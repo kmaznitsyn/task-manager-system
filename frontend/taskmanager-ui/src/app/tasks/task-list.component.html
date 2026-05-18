@@ -1,0 +1,64 @@
+<section class="tasks">
+  <header class="tasks__header">
+    <h2 uiHeading>Tasks</h2>
+    <div class="tasks__actions">
+      <button uiButton variant="ghost" (click)="load()" [disabled]="state() === 'loading'">
+        Refresh
+      </button>
+      <button uiButton routerLink="/tasks/new">New task</button>
+    </div>
+  </header>
+
+  @switch (state()) {
+    @case ('loading') {
+      <p uiText variant="loading" class="state" role="status" aria-live="polite">
+        Loading tasks…
+      </p>
+    }
+
+    @case ('error') {
+      <div class="state" role="alert">
+        <p uiText variant="error">{{ error() }}</p>
+        <button uiButton (click)="load()">Retry</button>
+      </div>
+    }
+
+    @case ('loaded') {
+      @if (items().length === 0) {
+        <div class="state">
+          <p uiText>No tasks yet.</p>
+          <p uiText variant="muted">Create your first task to see it here.</p>
+        </div>
+      } @else {
+        <table class="tasks__table">
+          <thead>
+            <tr>
+              <th scope="col">Title</th>
+              <th scope="col">Status</th>
+              <th scope="col">Due</th>
+              <th scope="col" class="tasks__row-actions"><span class="visually-hidden">Actions</span></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (t of items(); track t.id) {
+              <tr>
+                <td>{{ t.title }}</td>
+                <td>
+                  <span uiBadge [tone]="toneFor(t.status)">{{ t.status }}</span>
+                </td>
+                <td>
+                  {{ t.due_date ? (t.due_date | date: 'mediumDate') : '—' }}
+                </td>
+                <td class="tasks__row-actions">
+                  <button uiButton variant="ghost" [routerLink]="['/tasks', t.id, 'edit']">
+                    Edit
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      }
+    }
+  }
+</section>

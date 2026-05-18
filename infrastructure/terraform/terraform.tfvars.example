@@ -1,0 +1,7 @@
+project_id        = "your-gcp-project"
+region            = "europe-west3"
+env               = "dev"
+user_db_url       = "postgresql+psycopg://user:pass@/users_db?host=/cloudsql/PROJECT:REGION:INSTANCE"
+task_db_url       = "postgresql+psycopg://user:pass@/tasks_db?host=/cloudsql/PROJECT:REGION:INSTANCE"
+keycloak_issuer   = "https://keycloak.example.com/realms/taskmanager"
+keycloak_jwks_url = "https://keycloak.example.com/realms/taskmanager/protocol/openid-connect/certs"

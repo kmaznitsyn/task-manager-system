@@ -1,0 +1,11 @@
+.ui-text {
+  font-family: system-ui, sans-serif;
+  font-size: 1rem;
+  line-height: 1.5;
+  margin: 0;
+  color: #374151;
+
+  &[data-variant='muted']   { color: #9ca3af; font-size: 0.9rem; }
+  &[data-variant='error']   { color: #b91c1c; }
+  &[data-variant='loading'] { color: #4b5563; }
+}

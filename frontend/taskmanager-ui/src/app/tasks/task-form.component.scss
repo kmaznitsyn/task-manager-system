@@ -1,0 +1,78 @@
+.form {
+  max-width: 640px;
+  margin: 1.5rem auto;
+  padding: 0 1rem;
+  font-family: system-ui, sans-serif;
+}
+
+.form__header {
+  margin-bottom: 1rem;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+
+  label {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #374151;
+  }
+
+  input,
+  textarea,
+  select {
+    font: inherit;
+    padding: 0.5rem 0.6rem;
+    border: 1px solid #d1d5db;
+    border-radius: 6px;
+    background: #fff;
+    color: #111827;
+
+    &:focus {
+      outline: 2px solid #2563eb;
+      outline-offset: 1px;
+      border-color: transparent;
+    }
+
+    &.ng-invalid.ng-touched {
+      border-color: #dc2626;
+    }
+  }
+
+  textarea {
+    resize: vertical;
+    min-height: 6rem;
+  }
+}
+
+.field--row {
+  display: flex;
+  flex-direction: row;
+  gap: 1rem;
+
+  > .field {
+    flex: 1;
+  }
+}
+
+.field__error {
+  margin: 0;
+}
+
+.form__actions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+.state {
+  margin: 2rem 0;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}

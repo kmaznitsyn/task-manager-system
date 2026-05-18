@@ -1,0 +1,35 @@
+.home {
+  max-width: 720px;
+  margin: 3rem auto;
+  padding: 2.5rem;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+
+  h1 {
+    margin: 0 0 0.5rem;
+    font-size: 2rem;
+    font-weight: 700;
+    color: #111827;
+    letter-spacing: -0.02em;
+  }
+
+  .lede {
+    margin: 0 0 1.5rem;
+    color: #6b7280;
+    font-size: 1.05rem;
+  }
+
+  .cta {
+    display: inline-block;
+    padding: 0.625rem 1.25rem;
+    background: #2563eb;
+    color: #fff;
+    text-decoration: none;
+    border-radius: 8px;
+    font-weight: 500;
+    transition: background 0.15s ease;
+
+    &:hover { background: #1d4ed8; }
+  }
+}
