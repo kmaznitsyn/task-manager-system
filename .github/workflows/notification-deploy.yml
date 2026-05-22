@@ -1,0 +1,37 @@
+name: notification-deploy
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'cloud-functions/notification/**'
+      - '.github/workflows/notification-deploy.yml'
+
+permissions:
+  contents: read
+  id-token: write   # required for WIF
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/578910743970/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: artifact-pusher@still-function-494322-d7.iam.gserviceaccount.com
+
+      - uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy Cloud Function (Gen2)
+        # Gen2 functions are Cloud Run under the hood; gcloud uploads the source,
+        # builds via Cloud Build, and wires the Pub/Sub trigger to `tasks-events`.
+        run: |
+          gcloud functions deploy notification \
+            --gen2 \
+            --runtime=python312 \
+            --region=europe-west3 \
+            --source=cloud-functions/notification \
+            --entry-point=handle_task_event \
+            --trigger-topic=tasks-events

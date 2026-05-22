@@ -1,0 +1,32 @@
+name: notification-ci
+
+on:
+  pull_request:
+    paths:
+      - 'cloud-functions/notification/**'
+      - '.github/workflows/notification-ci.yml'
+
+defaults:
+  run:
+    working-directory: cloud-functions/notification
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install deps
+        run: |
+          pip install -r requirements.txt
+          pip install pytest ruff
+
+      - name: Ruff
+        run: ruff check .
+
+      - name: Pytest
+        run: pytest
