@@ -30,7 +30,10 @@ jobs:
         working-directory: frontend/taskmanager-ui
         run: |
           gcloud builds submit \
-            --tag europe-west3-docker.pkg.dev/still-function-494322-d7/taskmanager/frontend:${{ github.sha }}
+            --tag europe-west3-docker.pkg.dev/still-function-494322-d7/taskmanager/frontend:${{ github.sha }} \
+            --region=europe-west3 \
+            --default-buckets-behavior=REGIONAL_USER_OWNED_BUCKET \
+            --service-account=projects/still-function-494322-d7/serviceAccounts/artifact-pusher@still-function-494322-d7.iam.gserviceaccount.com
 
       - name: Deploy to Cloud Run
         run: |
