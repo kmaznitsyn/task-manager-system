@@ -342,36 +342,125 @@ resource "google_artifact_registry_repository" "quay_remote" {
   }
 }
 
+# ---------- App service DB users + credentials (mirrors Keycloak pattern) ----------
+# Random passwords use special=false so the result is URL-safe — the password
+# is embedded in a postgresql:// URL stored in Secret Manager below.
+
+resource "random_password" "user_service_db" {
+  length  = 32
+  special = false
+}
+
+resource "random_password" "task_service_db" {
+  length  = 32
+  special = false
+}
+
+resource "google_sql_user" "user_service" {
+  name     = "user_service"
+  instance = google_sql_database_instance.main.name
+  password = random_password.user_service_db.result
+}
+
+resource "google_sql_user" "task_service" {
+  name     = "task_service"
+  instance = google_sql_database_instance.main.name
+  password = random_password.task_service_db.result
+}
+
+# Whole DATABASE_URL lives in Secret Manager — Cloud Run V2 can't compose env
+# var values from secret + plaintext fragments, so storing the assembled URL
+# is simpler than splitting into host/user/password env vars and changing
+# Settings in Python to assemble them.
+resource "google_secret_manager_secret" "user_service_db_url" {
+  secret_id = "user-service-db-url"
+  replication {
+    auto {}
+  }
+}
+resource "google_secret_manager_secret_version" "user_service_db_url" {
+  secret      = google_secret_manager_secret.user_service_db_url.id
+  secret_data = "postgresql+psycopg://${google_sql_user.user_service.name}:${random_password.user_service_db.result}@${google_sql_database_instance.main.private_ip_address}:5432/${google_sql_database.users.name}"
+}
+
+resource "google_secret_manager_secret" "task_service_db_url" {
+  secret_id = "task-service-db-url"
+  replication {
+    auto {}
+  }
+}
+resource "google_secret_manager_secret_version" "task_service_db_url" {
+  secret      = google_secret_manager_secret.task_service_db_url.id
+  secret_data = "postgresql+psycopg://${google_sql_user.task_service.name}:${random_password.task_service_db.result}@${google_sql_database_instance.main.private_ip_address}:5432/${google_sql_database.tasks.name}"
+}
+
+# Dedicated runtime SAs (matches Keycloak's google_service_account.keycloak).
+resource "google_service_account" "user_service" {
+  account_id   = "user-service"
+  display_name = "user-service runtime SA"
+}
+
+resource "google_service_account" "task_service" {
+  account_id   = "task-service"
+  display_name = "task-service runtime SA"
+}
+
+resource "google_secret_manager_secret_iam_member" "user_service_db_url_access" {
+  secret_id = google_secret_manager_secret.user_service_db_url.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.user_service.email}"
+}
+
+resource "google_secret_manager_secret_iam_member" "task_service_db_url_access" {
+  secret_id = google_secret_manager_secret.task_service_db_url.id
+  role      = "roles/secretmanager.secretAccessor"
+  member    = "serviceAccount:${google_service_account.task_service.email}"
+}
+
+# task-service publishes task.created / task.completed to the tasks-events
+# topic. Without this binding the dedicated SA can't publish.
+resource "google_pubsub_topic_iam_member" "task_service_publisher" {
+  topic  = google_pubsub_topic.tasks_events.name
+  role   = "roles/pubsub.publisher"
+  member = "serviceAccount:${google_service_account.task_service.email}"
+}
+
 # ---------- Cloud Run services ----------
 # NOTE: images must already be pushed to Artifact Registry.
 # See module calls below.
 
 module "user_service" {
-  source    = "./modules/cloud_run_service"
-  name      = "user-service"
-  region    = var.region
-  image     = "${var.region}-docker.pkg.dev/${var.project_id}/taskmanager/user-service:latest"
-  connector = google_vpc_access_connector.connector.id
+  source          = "./modules/cloud_run_service"
+  name            = "user-service"
+  region          = var.region
+  image           = "${var.region}-docker.pkg.dev/${var.project_id}/taskmanager/user-service:latest"
+  connector       = google_vpc_access_connector.connector.id
+  service_account = google_service_account.user_service.email
   env_vars = {
-    DATABASE_URL      = var.user_db_url
     KEYCLOAK_ISSUER   = var.keycloak_issuer
     KEYCLOAK_AUDIENCE = var.keycloak_audience
     KEYCLOAK_JWKS_URL = var.keycloak_jwks_url
   }
+  secret_env_vars = {
+    DATABASE_URL = { secret = google_secret_manager_secret.user_service_db_url.secret_id }
+  }
 }
 
 module "task_service" {
-  source    = "./modules/cloud_run_service"
-  name      = "task-service"
-  region    = var.region
-  image     = "${var.region}-docker.pkg.dev/${var.project_id}/taskmanager/task-service:latest"
-  connector = google_vpc_access_connector.connector.id
+  source          = "./modules/cloud_run_service"
+  name            = "task-service"
+  region          = var.region
+  image           = "${var.region}-docker.pkg.dev/${var.project_id}/taskmanager/task-service:latest"
+  connector       = google_vpc_access_connector.connector.id
+  service_account = google_service_account.task_service.email
   env_vars = {
-    DATABASE_URL              = var.task_db_url
     KEYCLOAK_ISSUER           = var.keycloak_issuer
     KEYCLOAK_AUDIENCE         = var.keycloak_audience
     KEYCLOAK_JWKS_URL         = var.keycloak_jwks_url
     PUBSUB_TOPIC_TASKS_EVENTS = google_pubsub_topic.tasks_events.name
+  }
+  secret_env_vars = {
+    DATABASE_URL = { secret = google_secret_manager_secret.task_service_db_url.secret_id }
   }
 }
 

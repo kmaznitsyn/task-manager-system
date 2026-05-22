@@ -5,6 +5,19 @@ variable "env_vars" {
   type    = map(string)
   default = {}
 }
+variable "secret_env_vars" {
+  description = "Env vars sourced from Secret Manager. Map of env var name -> { secret = secret_id, version = optional }."
+  type = map(object({
+    secret  = string
+    version = optional(string, "latest")
+  }))
+  default = {}
+}
+variable "service_account" {
+  description = "Runtime service account email. If null, Cloud Run uses the default compute SA."
+  type        = string
+  default     = null
+}
 variable "connector" {
     type    = string
     default = null
@@ -17,6 +30,8 @@ resource "google_cloud_run_v2_service" "this" {
   deletion_protection = false
 
   template {
+    service_account = var.service_account
+
     containers {
       image = var.image
 
@@ -29,6 +44,19 @@ resource "google_cloud_run_v2_service" "this" {
         content {
           name  = env.key
           value = env.value
+        }
+      }
+
+      dynamic "env" {
+        for_each = var.secret_env_vars
+        content {
+          name = env.key
+          value_source {
+            secret_key_ref {
+              secret  = env.value.secret
+              version = env.value.version
+            }
+          }
         }
       }
 

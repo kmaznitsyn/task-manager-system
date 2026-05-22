@@ -15,18 +15,6 @@ variable "env" {
   default     = "dev"
 }
 
-variable "user_db_url" {
-  description = "Connection string for user-service DB"
-  type        = string
-  sensitive   = true
-}
-
-variable "task_db_url" {
-  description = "Connection string for task-service DB"
-  type        = string
-  sensitive   = true
-}
-
 variable "keycloak_issuer" {
   type = string
 }
