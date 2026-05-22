@@ -42,6 +42,8 @@ crash.*.log
 # Real values — only .example is committed
 terraform.tfvars
 *.auto.tfvars
+# Exception: this file holds non-secret defaults (project_id, URLs) used by CI.
+!infrastructure/terraform/terraform.auto.tfvars
 
 # ---------- Secrets / env ----------
 .env
