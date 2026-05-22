@@ -355,6 +355,7 @@ module "user_service" {
   env_vars = {
     DATABASE_URL      = var.user_db_url
     KEYCLOAK_ISSUER   = var.keycloak_issuer
+    KEYCLOAK_AUDIENCE = var.keycloak_audience
     KEYCLOAK_JWKS_URL = var.keycloak_jwks_url
   }
 }
@@ -368,6 +369,7 @@ module "task_service" {
   env_vars = {
     DATABASE_URL              = var.task_db_url
     KEYCLOAK_ISSUER           = var.keycloak_issuer
+    KEYCLOAK_AUDIENCE         = var.keycloak_audience
     KEYCLOAK_JWKS_URL         = var.keycloak_jwks_url
     PUBSUB_TOPIC_TASKS_EVENTS = google_pubsub_topic.tasks_events.name
   }

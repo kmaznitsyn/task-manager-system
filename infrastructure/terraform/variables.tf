@@ -35,6 +35,12 @@ variable "keycloak_jwks_url" {
   type = string
 }
 
+variable "keycloak_audience" {
+  description = "JWT audience claim the backend services validate."
+  type        = string
+  default     = "taskmanager-api"
+}
+
 variable "keycloak_admin_url" {
   type = string
 }

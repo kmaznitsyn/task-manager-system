@@ -5,6 +5,7 @@ user_db_url           = "postgresql+psycopg://user:pass@/users_db?host=/cloudsql
 task_db_url           = "postgresql+psycopg://user:pass@/tasks_db?host=/cloudsql/PROJECT:REGION:INSTANCE"
 keycloak_issuer       = "https://keycloak.example.com/realms/taskmanager"
 keycloak_jwks_url     = "https://keycloak.example.com/realms/taskmanager/protocol/openid-connect/certs"
+keycloak_audience     = "taskmanager-api"
 keycloak_admin_url    = "https://keycloak.example.com/admin/realms/taskmanager"
 keycloak_client_id    = "notification-fn"
 sendgrid_from_address = "noreply@example.com"
