@@ -46,3 +46,8 @@ variable "keycloak_client_id" {
 variable "sendgrid_from_address" {
   type = string
 }
+
+variable "public_domain" {
+  description = "Apex domain — Keycloak is served at auth.<public_domain>."
+  type        = string
+}

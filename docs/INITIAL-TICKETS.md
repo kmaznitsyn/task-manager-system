@@ -198,6 +198,33 @@ Decide: Cloud Run + Cloud SQL, or external SaaS (e.g., Phase Two, Red Hat SSO). 
 
 ---
 
+### TM-27 · Deploy frontend (Angular SPA)
+**Type:** Feature · **Estimate:** 4h
+**Depends on:** TM-19, TM-20
+**Description**
+Decide where the built `frontend/taskmanager-ui` artifact is served from and wire it up in Terraform. Candidates:
+- **Firebase Hosting** — simplest for a static SPA, free tier, global CDN, automatic TLS, easy custom domain. Slight drift from "everything in Terraform/GCP project" since Firebase is a sibling product.
+- **Cloud Storage + HTTPS Load Balancer + Cloud CDN** — pure GCP, fits the existing Terraform footprint, more moving parts (bucket, backend bucket, URL map, cert, LB).
+- **Cloud Run (nginx container serving `dist/`)** — consistent with the backend services but overkill for static assets and pays for cold starts.
+
+Recommended for a scaffold: Cloud Storage + LB + CDN (keeps everything in one Terraform state and one GCP project). Document the choice in `docs/architecture/frontend-hosting.md`.
+
+**Acceptance criteria**
+- [ ] Production `environment.prod.ts` points at the prod Keycloak issuer (TM-20) and the API gateway / Cloud Run URLs (TM-19)
+- [ ] `npm run build --configuration=production` artifact is uploaded by Terraform (or by CI in TM-21) — no manual `gsutil cp`
+- [ ] Public HTTPS URL on a stable custom domain (e.g. `app.<your-domain>`); HTTP redirects to HTTPS
+- [ ] SPA deep-links (`/tasks/123`) return `index.html` (404 → index rewrite on the LB / Firebase)
+- [ ] Keycloak `taskmanager-ui` client has the production redirect URI + web origin added
+- [ ] CORS on the API gateway / Cloud Run services allows the frontend origin only (no `*`)
+- [ ] Cache headers: hashed JS/CSS = `immutable, max-age=1y`; `index.html` = `no-cache`
+- [ ] Login → list tasks → create task works end-to-end against prod
+
+**Notes**
+- Don't ship `environment.ts` (dev) to prod by accident — verify the built `main-*.js` references the prod issuer.
+- The Keycloak silent-check-sso iframe needs `assets/silent-check-sso.html` to be served at the same origin; confirm it's in the build output.
+
+---
+
 ## Epic 8: CI/CD
 
 ### TM-21 · GitHub Actions / GitLab CI pipeline

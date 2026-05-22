@@ -1,0 +1,32 @@
+name: terraform-apply
+
+on:
+  workflow_dispatch:   # manual trigger from the GitHub UI ("Run workflow")
+
+permissions:
+  contents: read
+  id-token: write   # required for WIF
+
+defaults:
+  run:
+    working-directory: infrastructure/terraform
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    environment: production   # add required reviewers in Settings > Environments
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/578910743970/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+          service_account: terraform-applier@still-function-494322-d7.iam.gserviceaccount.com
+
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.8
+
+      - run: terraform init -input=false
+
+      - run: terraform apply -input=false -auto-approve

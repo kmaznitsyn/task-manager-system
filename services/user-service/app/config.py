@@ -10,7 +10,7 @@ class Settings(BaseSettings):
     keycloak_audience: str = "taskmanager-api"
     keycloak_jwks_url: str = "http://localhost:8080/realms/taskmanager/protocol/openid-connect/certs"
 
-    cors_origins: list[str] = ["http://localhost:4200"]
+    cors_origins: list[str] = ["http://localhost:4200", "https://taskmanager-ui-578910743970.europe-west3.run.app"]
 
     class Config:
         env_file = ".env"

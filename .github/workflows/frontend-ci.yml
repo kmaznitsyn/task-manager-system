@@ -1,0 +1,34 @@
+name: frontend-ci
+
+on:
+  pull_request:
+    paths:
+      - 'frontend/taskmanager-ui/**'
+      - '.github/workflows/frontend-ci.yml'
+
+defaults:
+  run:
+    working-directory: frontend/taskmanager-ui
+
+jobs:
+  lint-test-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.33.0
+          run_install: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: frontend/taskmanager-ui/pnpm-lock.yaml
+
+      - run: pnpm install --frozen-lockfile
+
+      - run: pnpm test -- --watch=false --browsers=ChromeHeadless
+
+      - run: pnpm build

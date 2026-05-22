@@ -15,7 +15,7 @@ class Settings(BaseSettings):
     pubsub_project_id: str = "local-dev"
     pubsub_topic_tasks_events: str = "tasks-events"
 
-    cors_origins: list[str] = ["http://localhost:4200"]
+    cors_origins: list[str] = ["http://localhost:4200", "https://taskmanager-ui-578910743970.europe-west3.run.app"]
 
     class Config:
         env_file = ".env"
