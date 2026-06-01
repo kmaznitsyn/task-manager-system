@@ -1,0 +1,75 @@
+<section class="form-page fade-in">
+  <div class="form-card">
+    <header class="form-card__header">
+      <h2 class="form-card__title">New logistics document</h2>
+      <p class="form-card__subtitle">Submit a document for processing and data extraction</p>
+    </header>
+
+    <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
+      <div class="field">
+        <label class="field__label" for="doc_type">Document type</label>
+        <select id="doc_type" class="field__input" formControlName="doc_type">
+          @for (t of docTypes; track t) {
+            <option [value]="t">{{ typeLabels[t] }}</option>
+          }
+        </select>
+      </div>
+
+      <div class="field-row">
+        <div class="field">
+          <label class="field__label" for="reference_number">Reference number</label>
+          <input
+            id="reference_number"
+            class="field__input"
+            type="text"
+            formControlName="reference_number"
+            placeholder="e.g. BL-7788"
+          />
+        </div>
+
+        <div class="field">
+          <label class="field__label" for="shipment_ref">Shipment reference <span class="field__optional">(optional)</span></label>
+          <input
+            id="shipment_ref"
+            class="field__input"
+            type="text"
+            formControlName="shipment_ref"
+            placeholder="e.g. SHP-2026-001"
+          />
+        </div>
+      </div>
+
+      <div class="field">
+        <label class="field__label" for="raw_text">Document text</label>
+        <textarea
+          id="raw_text"
+          class="field__input field__input--mono"
+          formControlName="raw_text"
+          rows="10"
+          placeholder="Paste the document contents (e.g. OCR output)..."
+        ></textarea>
+        <p class="field__hint">
+          Lines like "B/L number: BL-1", "Consignor: ACME", "Total: 100", "Currency: EUR" will be
+          extracted on processing.
+        </p>
+      </div>
+
+      @if (error()) {
+        <p class="form-error" role="alert">{{ error() }}</p>
+      }
+
+      <div class="form-card__actions">
+        <app-button
+          type="submit"
+          [loading]="state() === 'saving'"
+          [disabled]="form.invalid"
+        >
+          Submit document
+        </app-button>
+        <app-button variant="ghost" type="button" routerLink="/documents">
+          Cancel
+        </app-button>
+      </div>
+    </form>
+  </div>
+</section>

@@ -1,78 +1,48 @@
-.form {
-  max-width: 640px;
-  margin: 1.5rem auto;
-  padding: 0 1rem;
-  font-family: system-ui, sans-serif;
-}
+/* Component-specific overrides only; shared form styles in global styles.scss */
 
-.form__header {
-  margin-bottom: 1rem;
-}
-
-.field {
+.chips {
   display: flex;
-  flex-direction: column;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-bottom: 0.5rem;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
   gap: 0.35rem;
-  margin-bottom: 1rem;
+  padding: 0.2rem 0.3rem 0.2rem 0.6rem;
+  background: #eff6ff;
+  color: #1e40af;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+}
 
-  label {
-    font-size: 0.85rem;
-    font-weight: 600;
-    color: #374151;
-  }
-
-  input,
-  textarea,
-  select {
-    font: inherit;
-    padding: 0.5rem 0.6rem;
-    border: 1px solid #d1d5db;
-    border-radius: 6px;
-    background: #fff;
-    color: #111827;
-
-    &:focus {
-      outline: 2px solid #2563eb;
-      outline-offset: 1px;
-      border-color: transparent;
-    }
-
-    &.ng-invalid.ng-touched {
-      border-color: #dc2626;
-    }
-  }
-
-  textarea {
-    resize: vertical;
-    min-height: 6rem;
+.chip__remove {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.1rem;
+  height: 1.1rem;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: #1e40af;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  &:hover {
+    background: #dbeafe;
   }
 }
 
-.field--row {
+.chip-input {
   display: flex;
-  flex-direction: row;
-  gap: 1rem;
+  gap: 0.5rem;
+  align-items: stretch;
 
-  > .field {
+  .field__input {
     flex: 1;
   }
-}
-
-.field__error {
-  margin: 0;
-}
-
-.form__actions {
-  display: flex;
-  gap: 0.5rem;
-  margin-top: 1rem;
-}
-
-.state {
-  margin: 2rem 0;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.5rem;
 }

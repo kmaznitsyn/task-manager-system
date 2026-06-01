@@ -1,0 +1,121 @@
+@switch (state()) {
+  @case ('loading') {
+    <div class="card card--skeleton" aria-busy="true" aria-label="Loading profile">
+      <div class="card__banner sk"></div>
+      <div class="sk-avatar sk"></div>
+      <div class="sk-line sk sk-line--lg"></div>
+      <div class="sk-line sk sk-line--sm"></div>
+      <div class="sk-fields">
+        <div class="sk-line sk"></div>
+        <div class="sk-line sk"></div>
+        <div class="sk-line sk"></div>
+      </div>
+    </div>
+  }
+
+  @case ('error') {
+    <div class="card card--error">
+      <div class="error-mark" aria-hidden="true">!</div>
+      <h2 class="error-title">We couldn't load your profile</h2>
+      <p class="error-text">Something went wrong reaching the user service.</p>
+      <app-button (click)="load()">Try again</app-button>
+    </div>
+  }
+
+  @case ('loaded') {
+    <article class="card">
+      <div class="card__banner" aria-hidden="true">
+        <span class="card__banner-grain"></span>
+      </div>
+
+      <div class="card__avatar" aria-hidden="true">{{ initials() }}</div>
+
+      <div class="card__identity">
+        <h1 class="card__name">{{ displayName() || 'Unnamed traveller' }}</h1>
+        <p class="card__handle">{{ email() }}</p>
+      </div>
+
+      <dl class="fields">
+        <div class="field">
+          <dt class="field__label">
+            <svg class="field__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="5" width="18" height="14" rx="2"/>
+              <polyline points="3 7 12 13 21 7"/>
+            </svg>
+            Email
+          </dt>
+          <dd class="field__value">
+            <span class="field__text field__text--mono">{{ email() }}</span>
+            <span class="chip chip--locked">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="5" y="11" width="14" height="9" rx="2"/>
+                <path d="M8 11V8a4 4 0 0 1 8 0v3"/>
+              </svg>
+              Managed by Keycloak
+            </span>
+          </dd>
+        </div>
+
+        <div class="field" [class.field--editing]="editing()">
+          <dt class="field__label">
+            <svg class="field__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 21a8 8 0 0 0-16 0"/>
+              <circle cx="12" cy="7" r="4"/>
+            </svg>
+            Display name
+          </dt>
+          <dd class="field__value">
+            @if (!editing()) {
+              <span class="field__text" [class.field__text--empty]="!displayName()">
+                {{ displayName() || 'Not set yet' }}
+              </span>
+              <button type="button" class="field__edit" (click)="startEdit()">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                  <path d="M12 20h9"/>
+                  <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/>
+                </svg>
+                Edit
+              </button>
+              @if (justSaved()) {
+                <span class="flash" role="status">Saved</span>
+              }
+            } @else {
+              <form class="edit" (ngSubmit)="save()">
+                <input
+                  class="edit__input"
+                  name="displayName"
+                  [(ngModel)]="draft"
+                  maxlength="120"
+                  autocomplete="name"
+                  placeholder="How should we call you?"
+                  aria-label="Display name"
+                />
+                <div class="edit__actions">
+                  <app-button type="submit" size="sm" [loading]="saving()">Save</app-button>
+                  <app-button type="button" size="sm" variant="ghost" [disabled]="saving()" (click)="cancelEdit()">Cancel</app-button>
+                </div>
+              </form>
+              @if (saveError()) {
+                <p class="field__error" role="alert">{{ saveError() }}</p>
+              }
+            }
+          </dd>
+        </div>
+
+        <div class="field">
+          <dt class="field__label">
+            <svg class="field__icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <rect x="3" y="4" width="18" height="18" rx="2"/>
+              <path d="M16 2v4M8 2v4M3 10h18"/>
+            </svg>
+            Member since
+          </dt>
+          <dd class="field__value">
+            <span class="field__text">{{ profile()!.created_at | date: 'longDate' }}</span>
+            <span class="chip">{{ membership() }}</span>
+          </dd>
+        </div>
+      </dl>
+    </article>
+  }
+}

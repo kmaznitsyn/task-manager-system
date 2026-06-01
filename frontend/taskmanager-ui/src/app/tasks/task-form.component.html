@@ -1,92 +1,142 @@
-<section class="form">
-  <header class="form__header">
-    <h2 uiHeading>{{ mode() === 'edit' ? 'Edit task' : 'New task' }}</h2>
-  </header>
-
-  @switch (state()) {
-    @case ('loading') {
-      <p uiText variant="loading" class="state" role="status" aria-live="polite">
-        Loading task…
+<section class="form-page fade-in">
+  <div class="form-card">
+    <header class="form-card__header">
+      <h2 class="form-card__title">{{ mode() === 'edit' ? 'Edit task' : 'New task' }}</h2>
+      <p class="form-card__subtitle">
+        {{ mode() === 'edit' ? 'Update task details below' : 'Fill in the details to create a task' }}
       </p>
-    }
+    </header>
 
-    @case ('load-error') {
-      <div class="state" role="alert">
-        <p uiText variant="error">{{ error() }}</p>
-        <button uiButton variant="ghost" routerLink="/tasks">Back to tasks</button>
-      </div>
-    }
-
-    @default {
-      <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
-        <div class="field">
-          <label for="title">Title</label>
-          <input
-            id="title"
-            type="text"
-            formControlName="title"
-            maxlength="200"
-            autocomplete="off"
-            required
-          />
-          @if (form.controls.title.touched && form.controls.title.invalid) {
-            <p uiText variant="error" class="field__error">
-              @if (form.controls.title.hasError('required') || form.controls.title.hasError('blank')) {
-                Title is required.
-              } @else if (form.controls.title.hasError('maxlength')) {
-                Title must be 200 characters or fewer.
-              }
-            </p>
-          }
+    @switch (state()) {
+      @case ('loading') {
+        <div class="state-card" role="status" aria-live="polite">
+          <div class="state-card__spinner"></div>
+          <p class="state-card__text">Loading task...</p>
         </div>
+      }
 
-        <div class="field">
-          <label for="description">Description</label>
-          <textarea
-            id="description"
-            formControlName="description"
-            rows="5"
-            maxlength="2000"
-          ></textarea>
-          @if (form.controls.description.touched && form.controls.description.hasError('maxlength')) {
-            <p uiText variant="error" class="field__error">
-              Description must be 2000 characters or fewer.
-            </p>
-          }
+      @case ('load-error') {
+        <div class="state-card" role="alert">
+          <p class="state-card__text state-card__text--error">{{ error() }}</p>
+          <app-button variant="ghost" routerLink="/tasks">Back to tasks</app-button>
         </div>
+      }
 
-        <div class="field--row">
+      @default {
+        <form [formGroup]="form" (ngSubmit)="submit()" novalidate>
           <div class="field">
-            <label for="status">Status</label>
-            <select id="status" formControlName="status">
-              @for (s of statuses; track s) {
-                <option [value]="s">{{ s }}</option>
-              }
-            </select>
+            <label class="field__label" for="title">Title</label>
+            <input
+              id="title"
+              class="field__input"
+              type="text"
+              formControlName="title"
+              maxlength="200"
+              autocomplete="off"
+              placeholder="What needs to be done?"
+              required
+            />
+            @if (form.controls.title.touched && form.controls.title.invalid) {
+              <p class="field__error">
+                @if (form.controls.title.hasError('required') || form.controls.title.hasError('blank')) {
+                  Title is required.
+                } @else if (form.controls.title.hasError('maxlength')) {
+                  Title must be 200 characters or fewer.
+                }
+              </p>
+            }
           </div>
+
           <div class="field">
-            <label for="due_date">Due date</label>
-            <input id="due_date" type="date" formControlName="due_date" />
+            <label class="field__label" for="description">Description</label>
+            <textarea
+              id="description"
+              class="field__input"
+              formControlName="description"
+              rows="4"
+              maxlength="2000"
+              placeholder="Add more context (optional)"
+            ></textarea>
+            @if (form.controls.description.touched && form.controls.description.hasError('maxlength')) {
+              <p class="field__error">Description must be 2000 characters or fewer.</p>
+            }
           </div>
-        </div>
 
-        @if (error()) {
-          <p uiText variant="error" role="alert">{{ error() }}</p>
-        }
+          <div class="field-row">
+            <div class="field">
+              <label class="field__label" for="status">Status</label>
+              <select id="status" class="field__input" formControlName="status">
+                @for (s of statuses; track s) {
+                  <option [value]="s">{{ s }}</option>
+                }
+              </select>
+            </div>
+            <div class="field">
+              <label class="field__label" for="due_date">Due date</label>
+              <input id="due_date" class="field__input" type="date" formControlName="due_date" />
+            </div>
+          </div>
 
-        <div class="form__actions">
-          <button uiButton type="submit" [disabled]="state() === 'saving'">
-            {{
-              state() === 'saving'
-                ? 'Saving…'
-                : (mode() === 'edit' ? 'Save changes' : 'Create task')
-            }}
-          </button>
-          <button uiButton variant="ghost" type="button" routerLink="/tasks">
-            Cancel
-          </button>
-        </div>
-      </form>
+          <div class="field">
+            <label class="field__label" for="label-input">Labels</label>
+            @if (labels().length > 0) {
+              <div class="chips">
+                @for (l of labels(); track l) {
+                  <span class="chip">
+                    {{ l }}
+                    <button
+                      type="button"
+                      class="chip__remove"
+                      [attr.aria-label]="'Remove label ' + l"
+                      (click)="removeLabel(l)"
+                    >&times;</button>
+                  </span>
+                }
+              </div>
+            }
+            <div class="chip-input">
+              <input
+                id="label-input"
+                class="field__input"
+                type="text"
+                list="label-suggestions"
+                maxlength="50"
+                autocomplete="off"
+                placeholder="Add a label and press Enter"
+                [(ngModel)]="labelDraft"
+                [ngModelOptions]="{ standalone: true }"
+                (keydown.enter)="$event.preventDefault(); addLabel()"
+                (keydown.comma)="$event.preventDefault(); addLabel()"
+              />
+              <datalist id="label-suggestions">
+                @for (s of availableSuggestions(); track s) {
+                  <option [value]="s"></option>
+                }
+              </datalist>
+              <app-button variant="ghost" type="button" size="sm" (click)="addLabel()">
+                Add
+              </app-button>
+            </div>
+          </div>
+
+          @if (error()) {
+            <p class="form-error" role="alert">{{ error() }}</p>
+          }
+
+          <div class="form-card__actions">
+            <app-button
+              type="submit"
+              [loading]="state() === 'saving'"
+              [disabled]="false"
+            >
+              {{ mode() === 'edit' ? 'Save changes' : 'Create task' }}
+            </app-button>
+            <app-button variant="ghost" type="button" routerLink="/tasks">
+              Cancel
+            </app-button>
+          </div>
+        </form>
+      }
     }
-  }
+  </div>
 </section>

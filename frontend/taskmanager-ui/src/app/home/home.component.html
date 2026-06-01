@@ -1,5 +1,84 @@
-<section class="home">
-  <h1>Task Manager</h1>
-  <p class="lede">Welcome back. Pick up where you left off.</p>
-  <a class="cta" routerLink="/tasks">View your tasks →</a>
+<section class="hero">
+  <div class="hero__content">
+    <span class="hero__badge">Task Manager</span>
+    <h1 class="hero__title">Organize your work,<br>deliver with clarity.</h1>
+    <p class="hero__subtitle">
+      Track tasks, manage logistics documents, and keep your team aligned
+      — all in one place.
+    </p>
+    <div class="hero__actions">
+      <app-button size="lg" routerLink="/tasks" icon="&#9776;">
+        View your tasks
+      </app-button>
+      <app-button variant="ghost" size="lg" routerLink="/documents" icon="&#128196;">
+        Logistics documents
+      </app-button>
+    </div>
+  </div>
+</section>
+
+<section class="features">
+  <div class="features__grid">
+    <div class="feature-card">
+      <div class="feature-card__icon feature-card__icon--blue">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M9 11l3 3L22 4"/>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"/>
+        </svg>
+      </div>
+      <h3 class="feature-card__title">Task tracking</h3>
+      <p class="feature-card__desc">
+        Create, assign, and track tasks with statuses and due dates. Never lose sight of what matters.
+      </p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-card__icon feature-card__icon--indigo">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+          <polyline points="14 2 14 8 20 8"/>
+          <line x1="16" y1="13" x2="8" y2="13"/>
+          <line x1="16" y1="17" x2="8" y2="17"/>
+          <polyline points="10 9 9 9 8 9"/>
+        </svg>
+      </div>
+      <h3 class="feature-card__title">Document processing</h3>
+      <p class="feature-card__desc">
+        Upload bills of lading, manifests, invoices, and customs declarations. Extraction happens automatically.
+      </p>
+    </div>
+
+    <div class="feature-card">
+      <div class="feature-card__icon feature-card__icon--emerald">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+          <path d="M7 11V7a5 5 0 0 1 10 0v4"/>
+        </svg>
+      </div>
+      <h3 class="feature-card__title">Secure by default</h3>
+      <p class="feature-card__desc">
+        Authenticated with Keycloak SSO. Your data stays private — only you see your own tasks and documents.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section class="quick-start">
+  <h2 class="quick-start__title">Get started in seconds</h2>
+  <div class="quick-start__steps">
+    <div class="step">
+      <span class="step__number">1</span>
+      <p class="step__text">Create a new task or upload a document</p>
+    </div>
+    <div class="step__connector"></div>
+    <div class="step">
+      <span class="step__number">2</span>
+      <p class="step__text">Track progress with statuses and due dates</p>
+    </div>
+    <div class="step__connector"></div>
+    <div class="step">
+      <span class="step__number">3</span>
+      <p class="step__text">Review extracted data and stay organized</p>
+    </div>
+  </div>
 </section>

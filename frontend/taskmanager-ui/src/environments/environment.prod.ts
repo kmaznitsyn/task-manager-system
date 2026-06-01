@@ -10,5 +10,6 @@ export const environment = {
   api: {
     userService: 'https://user-service-d57bj7qdsa-ey.a.run.app',
     taskService: 'https://task-service-d57bj7qdsa-ey.a.run.app',
+    docsService: 'https://docs-service-d57bj7qdsa-ey.a.run.app',
   },
 };

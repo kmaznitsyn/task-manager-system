@@ -1,8 +1,8 @@
 import uuid
 from datetime import datetime
-from sqlalchemy import String, DateTime, func
+from sqlalchemy import JSON, String, DateTime, func
 from sqlalchemy.orm import Mapped, mapped_column
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 
 from .database import Base
 
@@ -29,4 +29,22 @@ class User(Base):
         server_default=func.now(),
         onupdate=func.now(),
         nullable=False,
+    )
+
+
+class OutboxEvent(Base):
+    __tablename__ = "outbox"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
+    )
+    topic: Mapped[str] = mapped_column(String(64))          # "user-events"
+    payload: Mapped[dict] = mapped_column(
+        JSONB().with_variant(JSON(), "sqlite")             # {"type":"user.deleted","sub":...}
+    )
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), nullable=False
+    )
+    published_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
     )

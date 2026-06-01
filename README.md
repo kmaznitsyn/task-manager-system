@@ -2,7 +2,7 @@
 
 A basic microservice project scaffold with:
 
-- **Backend:** FastAPI microservices (Python 3.12)
+- **Backend:** FastAPI microservices (Python 3.13)
 - **Frontend:** Angular 17+
 - **Auth:** Keycloak (OIDC / JWT)
 - **Database:** PostgreSQL (one DB per service)
@@ -55,7 +55,7 @@ See `docs/TICKETS.md` for the ordered list of tickets to implement.
 ### 1. Prerequisites
 
 - Docker (for Postgres + Keycloak)
-- Python 3.12 + [uv](https://docs.astral.sh/uv/) or Poetry
+- Python 3.13 + [uv](https://docs.astral.sh/uv/) or Poetry
 - Node 20+ / npm
 - Terraform ≥ 1.6 (only if touching infra)
 - `gcloud` CLI (only for deploying to GCP)
@@ -98,13 +98,19 @@ This brings up:
 cd services/user-service
 uv sync                      # or: poetry install
 alembic upgrade head
-uvicorn app.main:app --reload --port 8001
+uv run uvicorn app.main:app --reload --port 8001
 
 # task-service (new terminal)
 cd services/task-service
 uv sync
 alembic upgrade head
-uvicorn app.main:app --reload --port 8002
+uv run uvicorn app.main:app --reload --port 8002
+
+# docs-service (new terminal)
+cd services/docs-service
+uv sync
+alembic upgrade head
+uv run uvicorn app.main:app --reload --port 8003
 ```
 
 Each service owns its own DB, its own Alembic history, and its own `pyproject.toml`. They share the local `packages/auth` package via a relative path — no install step needed; edits there are picked up live.

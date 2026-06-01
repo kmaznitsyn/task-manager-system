@@ -1,63 +1,121 @@
 <section class="tasks">
   <header class="tasks__header">
-    <h2 uiHeading>Tasks</h2>
+    <div>
+      <h2 class="tasks__title">Tasks</h2>
+      <p class="tasks__subtitle">Track and manage your work items</p>
+    </div>
     <div class="tasks__actions">
-      <button uiButton variant="ghost" (click)="load()" [disabled]="state() === 'loading'">
+      <app-button variant="ghost" size="sm" (click)="load()" [disabled]="state() === 'loading'">
         Refresh
-      </button>
-      <button uiButton routerLink="/tasks/new">New task</button>
+      </app-button>
+      @if (tab() === 'active') {
+        <app-button routerLink="/tasks/new" icon="+">
+          New task
+        </app-button>
+      }
     </div>
   </header>
 
+  <div class="tabs">
+    <button class="tabs__btn" [class.tabs__btn--active]="tab() === 'active'" (click)="switchTab('active')">
+      Active
+    </button>
+    <button class="tabs__btn" [class.tabs__btn--active]="tab() === 'deleted'" (click)="switchTab('deleted')">
+      Deleted
+    </button>
+  </div>
+
+  @if (tab() === 'active') {
+    <div class="filters">
+      @for (f of ['all', 'todo', 'doing', 'done']; track f) {
+        <button
+          class="filter-pill"
+          [class.filter-pill--active]="statusFilter() === f"
+          (click)="setFilter($any(f))"
+        >
+          {{ f === 'all' ? 'All' : f }}
+        </button>
+      }
+    </div>
+  }
+
   @switch (state()) {
     @case ('loading') {
-      <p uiText variant="loading" class="state" role="status" aria-live="polite">
-        Loading tasks…
-      </p>
+      <div class="state-card fade-in" role="status" aria-live="polite">
+        <div class="state-card__spinner"></div>
+        <p class="state-card__text">Loading tasks...</p>
+      </div>
     }
 
     @case ('error') {
-      <div class="state" role="alert">
-        <p uiText variant="error">{{ error() }}</p>
-        <button uiButton (click)="load()">Retry</button>
+      <div class="state-card fade-in" role="alert">
+        <p class="state-card__text state-card__text--error">{{ error() }}</p>
+        <app-button (click)="load()">Retry</app-button>
       </div>
     }
 
     @case ('loaded') {
       @if (items().length === 0) {
-        <div class="state">
-          <p uiText>No tasks yet.</p>
-          <p uiText variant="muted">Create your first task to see it here.</p>
+        <div class="state-card fade-in">
+          @if (tab() === 'deleted') {
+            <p class="state-card__text">No deleted tasks</p>
+          } @else {
+            <div class="state-card__icon">&#128203;</div>
+            <p class="state-card__text">No tasks yet</p>
+            <p class="state-card__hint">Create your first task to see it here.</p>
+            <app-button routerLink="/tasks/new" icon="+">Create task</app-button>
+          }
         </div>
       } @else {
-        <table class="tasks__table">
-          <thead>
-            <tr>
-              <th scope="col">Title</th>
-              <th scope="col">Status</th>
-              <th scope="col">Due</th>
-              <th scope="col" class="tasks__row-actions"><span class="visually-hidden">Actions</span></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (t of items(); track t.id) {
-              <tr>
-                <td>{{ t.title }}</td>
-                <td>
-                  <span uiBadge [tone]="toneFor(t.status)">{{ t.status }}</span>
-                </td>
-                <td>
-                  {{ t.due_date ? (t.due_date | date: 'mediumDate') : '—' }}
-                </td>
-                <td class="tasks__row-actions">
-                  <button uiButton variant="ghost" [routerLink]="['/tasks', t.id, 'edit']">
-                    Edit
-                  </button>
-                </td>
-              </tr>
-            }
-          </tbody>
-        </table>
+        <div class="task-grid">
+          @for (t of items(); track t.id) {
+            <div class="task-card fade-in-up" [class.task-card--deleted]="tab() === 'deleted'">
+              <div class="task-card__top">
+                <h3 class="task-card__title">{{ t.title }}</h3>
+                <span class="status-badge" [attr.data-status]="t.status">
+                  {{ t.status }}
+                </span>
+              </div>
+              @if (t.description) {
+                <p class="task-card__desc">{{ t.description }}</p>
+              }
+              @if (t.labels.length > 0) {
+                <div class="task-card__labels">
+                  @for (l of t.labels; track l.id) {
+                    <span class="task-label" [style.--label-color]="l.color">
+                      {{ l.name }}
+                    </span>
+                  }
+                </div>
+              }
+              <div class="task-card__footer">
+                <span class="task-card__date">
+                  @if (tab() === 'deleted' && t.deleted_at) {
+                    Deleted {{ t.deleted_at | date: 'mediumDate' }}
+                  } @else if (t.due_date) {
+                    Due {{ t.due_date | date: 'mediumDate' }}
+                  } @else {
+                    No due date
+                  }
+                </span>
+                <div class="task-card__actions">
+                  @if (tab() === 'active') {
+                    <app-button variant="ghost" size="sm" [routerLink]="['/tasks', t.id, 'edit']">
+                      Edit
+                    </app-button>
+                    <app-button variant="danger" size="sm" (click)="deleteTask(t.id)">
+                      Delete
+                    </app-button>
+                  } @else {
+                    <app-button variant="outline" size="sm" (click)="restoreTask(t.id)">
+                      Restore
+                    </app-button>
+                  }
+                </div>
+              </div>
+            </div>
+          }
+        </div>
       }
     }
   }

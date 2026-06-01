@@ -464,6 +464,40 @@ module "task_service" {
   }
 }
 
+# ---------- Outbox relay (Cloud Scheduler -> user-service flush) ----------
+# Drives the transactional-outbox relay: on a fixed cadence it POSTs
+# /internal/outbox/flush so unpublished rows get pushed to Pub/Sub. The
+# endpoint is OIDC-gated, so the job authenticates with a Google-issued OIDC
+# token minted for this dedicated SA (audience = the service URL).
+resource "google_service_account" "outbox_scheduler" {
+  account_id   = "outbox-scheduler"
+  display_name = "Cloud Scheduler -> user-service outbox flush"
+}
+
+resource "google_cloud_run_v2_service_iam_member" "outbox_scheduler_invoker" {
+  location = module.user_service.location
+  name     = module.user_service.name
+  role     = "roles/run.invoker"
+  member   = "serviceAccount:${google_service_account.outbox_scheduler.email}"
+}
+
+resource "google_cloud_scheduler_job" "outbox_flush" {
+  name      = "user-service-outbox-flush"
+  region    = var.region
+  schedule  = "* * * * *" # every minute
+  time_zone = "Etc/UTC"
+
+  http_target {
+    http_method = "POST"
+    uri         = "${module.user_service.url}/internal/outbox/flush"
+
+    oidc_token {
+      service_account_email = google_service_account.outbox_scheduler.email
+      audience              = module.user_service.url
+    }
+  }
+}
+
 # ---------- Cloud Function (notification) ----------
 module "notification_function" {
   source                = "./modules/notification_function"

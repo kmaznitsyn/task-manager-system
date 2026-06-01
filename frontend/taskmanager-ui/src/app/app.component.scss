@@ -43,22 +43,28 @@ nav {
     }
   }
 
-  button {
+  app-button {
     margin-left: auto;
-    background: #ef4444;
-    color: #fff;
-    border: none;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: background 0.15s ease, transform 0.05s ease;
+  }
+}
 
-    &:hover { background: #dc2626; }
-    &:active { transform: translateY(1px); }
-    &:focus-visible {
-      outline: 2px solid #fca5a5;
-      outline-offset: 2px;
+@media (max-width: 640px) {
+  :host {
+    padding: 1rem;
+  }
+
+  nav {
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+
+    a {
+      font-size: 0.85rem;
+      padding: 0.4rem 0.7rem;
+    }
+
+    app-button {
+      margin-left: auto;
     }
   }
 }

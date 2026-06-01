@@ -1,4 +1,4 @@
-FROM python:3.12-slim
+FROM python:3.13-slim
 
 # Build context: repo root.
 # Mirror the repo layout inside the image so cf-auth's relative path

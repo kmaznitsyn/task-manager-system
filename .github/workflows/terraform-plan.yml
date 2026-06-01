@@ -1,66 +1,79 @@
 name: terraform-plan
 
+# Training/practice workflow — does NOT touch GCP.
+# Runs fmt + validate against the Terraform code on PRs.
+# `terraform plan` is skipped because it needs real GCP credentials and a
+# reachable state backend.
+# To enable real cloud plan: uncomment the `permissions:` block and the
+# commented steps below.
+
 on:
   pull_request:
     paths:
       - 'infrastructure/terraform/**'
       - '.github/workflows/terraform-plan.yml'
 
-permissions:
-  contents: read
-  id-token: write       # required for WIF
-  pull-requests: write  # to post the plan as a PR comment
+# permissions:
+#   contents: read
+#   id-token: write       # required for WIF
+#   pull-requests: write  # to post the plan as a PR comment
 
 defaults:
   run:
     working-directory: infrastructure/terraform
 
 jobs:
-  plan:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
-      - uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: projects/578910743970/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account: terraform-planner@still-function-494322-d7.iam.gserviceaccount.com
 
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.8
 
-      - run: terraform init -input=false
-
       - name: terraform fmt check
         run: terraform fmt -check -recursive
 
-      - run: terraform validate
+      - name: terraform init (providers only, no backend)
+        run: terraform init -backend=false -input=false
 
-      - name: terraform plan
-        id: plan
-        run: terraform plan -input=false -no-color -out=tfplan
-        continue-on-error: true
+      - name: terraform validate
+        run: terraform validate
 
-      - name: Comment plan on PR
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const output = `#### Terraform Plan \`${{ steps.plan.outcome }}\`
-            <details><summary>Show plan</summary>
-
-            \`\`\`
-            ${{ steps.plan.outputs.stdout }}
-            \`\`\`
-
-            </details>`;
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: output
-            });
-
-      - name: Fail if plan failed
-        if: steps.plan.outcome == 'failure'
-        run: exit 1
+      # --- Cloud plan (disabled for local training) ---------------------------
+      # - uses: google-github-actions/auth@v2
+      #   with:
+      #     workload_identity_provider: projects/578910743970/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+      #     service_account: terraform-planner@still-function-494322-d7.iam.gserviceaccount.com
+      #
+      # - name: terraform init (with GCS backend)
+      #   run: terraform init -input=false
+      #
+      # - name: terraform plan
+      #   id: plan
+      #   run: terraform plan -input=false -no-color -out=tfplan
+      #   continue-on-error: true
+      #
+      # - name: Comment plan on PR
+      #   uses: actions/github-script@v7
+      #   with:
+      #     script: |
+      #       const output = `#### Terraform Plan \`${{ steps.plan.outcome }}\`
+      #       <details><summary>Show plan</summary>
+      #
+      #       \`\`\`
+      #       ${{ steps.plan.outputs.stdout }}
+      #       \`\`\`
+      #
+      #       </details>`;
+      #       github.rest.issues.createComment({
+      #         issue_number: context.issue.number,
+      #         owner: context.repo.owner,
+      #         repo: context.repo.repo,
+      #         body: output
+      #       });
+      #
+      # - name: Fail if plan failed
+      #   if: steps.plan.outcome == 'failure'
+      #   run: exit 1

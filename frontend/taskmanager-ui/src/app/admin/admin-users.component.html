@@ -1,0 +1,178 @@
+<section class="admin">
+  <header class="admin__header">
+    <div class="admin__heading">
+      <span class="admin__eyebrow">Console</span>
+      <h2 class="admin__title">User Management</h2>
+      <p class="admin__subtitle">
+        Browse and remove accounts in the
+        <code>taskmanager</code> Keycloak realm.
+      </p>
+    </div>
+    @if (state() === 'loaded') {
+      <div class="admin__count">
+        <span class="admin__count-num">{{ total() }}</span>
+        <span class="admin__count-label">total users</span>
+      </div>
+    }
+  </header>
+
+  <form class="searchbar" (ngSubmit)="applySearch()">
+    <span class="searchbar__icon" aria-hidden="true">&#128269;</span>
+    <input
+      class="searchbar__input"
+      type="search"
+      name="search"
+      placeholder="Search by name, username, or email&hellip;"
+      autocomplete="off"
+      [ngModel]="search()"
+      (ngModelChange)="search.set($event)"
+    />
+    @if (search()) {
+      <button
+        type="button"
+        class="searchbar__clear"
+        aria-label="Clear search"
+        (click)="clearSearch()"
+      >
+        &times;
+      </button>
+    }
+    <app-button type="submit" size="sm" [disabled]="state() === 'loading'">
+      Search
+    </app-button>
+  </form>
+
+  @switch (state()) {
+    @case ('loading') {
+      <div class="state-card fade-in" role="status" aria-live="polite">
+        <div class="state-card__spinner"></div>
+        <p class="state-card__text">Loading users&hellip;</p>
+      </div>
+    }
+
+    @case ('error') {
+      <div class="state-card fade-in" role="alert">
+        <p class="state-card__text state-card__text--error">{{ error() }}</p>
+        <app-button (click)="load()">Retry</app-button>
+      </div>
+    }
+
+    @case ('loaded') {
+      @if (users().length === 0) {
+        <div class="state-card fade-in">
+          <div class="state-card__icon">&#128100;</div>
+          <p class="state-card__text">No users match your search</p>
+          @if (search()) {
+            <app-button variant="ghost" size="sm" (click)="clearSearch()">
+              Clear search
+            </app-button>
+          }
+        </div>
+      } @else {
+        <div class="table-wrap fade-in">
+          <table class="user-table">
+            <thead>
+              <tr>
+                <th class="col-user">User</th>
+                <th class="col-email">Email</th>
+                <th class="col-status">Status</th>
+                <th class="col-id">Keycloak ID</th>
+                <th class="col-created">Created</th>
+                <th class="col-actions"></th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (u of users(); track u.id) {
+                <tr [class.is-self]="u.id === selfSub">
+                  <td class="col-user">
+                    <div class="usercell">
+                      <span
+                        class="avatar"
+                        [style.--hue]="avatarHue(u.id)"
+                        aria-hidden="true"
+                      >
+                        {{ initials(u) }}
+                      </span>
+                      <span class="usercell__text">
+                        <span class="usercell__name">
+                          {{ fullName(u) }}
+                          @if (u.id === selfSub) {
+                            <span class="you-tag">you</span>
+                          }
+                        </span>
+                        <span class="usercell__username">{{ '@' + u.username }}</span>
+                      </span>
+                    </div>
+                  </td>
+                  <td class="col-email">
+                    @if (u.email) {
+                      {{ u.email }}
+                    } @else {
+                      <span class="muted">&mdash;</span>
+                    }
+                  </td>
+                  <td class="col-status">
+                    <span
+                      class="pill"
+                      [class.pill--on]="u.enabled"
+                      [class.pill--off]="!u.enabled"
+                    >
+                      {{ u.enabled ? 'Enabled' : 'Disabled' }}
+                    </span>
+                  </td>
+                  <td class="col-id">
+                    <code class="kcid" [title]="u.id">{{ u.id }}</code>
+                  </td>
+                  <td class="col-created">
+                    @if (u.created_timestamp) {
+                      {{ u.created_timestamp | date: 'mediumDate' }}
+                    } @else {
+                      <span class="muted">&mdash;</span>
+                    }
+                  </td>
+                  <td class="col-actions">
+                    <app-button
+                      variant="danger"
+                      size="sm"
+                      (click)="remove(u)"
+                      [disabled]="u.id === selfSub || busyId() === u.id"
+                      [loading]="busyId() === u.id"
+                    >
+                      Delete
+                    </app-button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+
+        <footer class="pager">
+          <span class="pager__range">
+            Showing <strong>{{ rangeStart() }}&ndash;{{ rangeEnd() }}</strong>
+            of <strong>{{ total() }}</strong>
+          </span>
+          <div class="pager__controls">
+            <app-button
+              variant="ghost"
+              size="sm"
+              (click)="prev()"
+              [disabled]="first() === 0"
+            >
+              &larr; Prev
+            </app-button>
+            <span class="pager__page">{{ page() }} / {{ pageCount() }}</span>
+            <app-button
+              variant="ghost"
+              size="sm"
+              (click)="next()"
+              [disabled]="first() + pageSize >= total()"
+            >
+              Next &rarr;
+            </app-button>
+          </div>
+        </footer>
+      }
+    }
+  }
+</section>

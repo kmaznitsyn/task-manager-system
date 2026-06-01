@@ -2,3 +2,10 @@ functions-framework>=3.8
 google-cloud-pubsub>=2.23
 requests>=2.32
 sendgrid>=6.11
+
+# cf_keycloak (the shared Keycloak admin client) is NOT installed from here.
+# A real `gcloud functions deploy --source=cloud-functions/notification` uploads
+# only this directory, so the package is vendored into ./cf_keycloak at build
+# time (see the "Vendor cf_keycloak" step in notification-deploy.yml). Its only
+# runtime dependency is `requests`, pinned above.
+# Local dev: `pip install -e ../../packages/keycloak` instead of vendoring.

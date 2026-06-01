@@ -1,32 +1,51 @@
 name: terraform-apply
 
+# Training/practice workflow — does NOT touch GCP.
+# Demonstrates the manual-trigger (workflow_dispatch) pattern.
+# Runs fmt + validate; the real `terraform apply` step is intentionally absent
+# because it would require GCP credentials and a reachable state backend.
+# To enable real cloud apply: uncomment the `permissions:` block, the
+# `environment:` line, and the commented steps below.
+
 on:
   workflow_dispatch:   # manual trigger from the GitHub UI ("Run workflow")
 
-permissions:
-  contents: read
-  id-token: write   # required for WIF
+# permissions:
+#   contents: read
+#   id-token: write   # required for WIF
 
 defaults:
   run:
     working-directory: infrastructure/terraform
 
 jobs:
-  apply:
+  validate:
     runs-on: ubuntu-latest
-    environment: production   # add required reviewers in Settings > Environments
+    # environment: production   # add required reviewers in Settings > Environments
     steps:
       - uses: actions/checkout@v4
-
-      - uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: projects/578910743970/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account: terraform-applier@still-function-494322-d7.iam.gserviceaccount.com
 
       - uses: hashicorp/setup-terraform@v3
         with:
           terraform_version: 1.9.8
 
-      - run: terraform init -input=false
+      - name: terraform fmt check
+        run: terraform fmt -check -recursive
 
-      - run: terraform apply -input=false -auto-approve
+      - name: terraform init (providers only, no backend)
+        run: terraform init -backend=false -input=false
+
+      - name: terraform validate
+        run: terraform validate
+
+      # --- Cloud apply (disabled for local training) --------------------------
+      # - uses: google-github-actions/auth@v2
+      #   with:
+      #     workload_identity_provider: projects/578910743970/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+      #     service_account: terraform-applier@still-function-494322-d7.iam.gserviceaccount.com
+      #
+      # - name: terraform init (with GCS backend)
+      #   run: terraform init -input=false
+      #
+      # - name: terraform apply
+      #   run: terraform apply -input=false -auto-approve

@@ -1,8 +1,11 @@
 """Thin Keycloak Admin API client.
 
-Used by the notification function to look up a user's email by their
-Keycloak `sub` (UUID). Authenticates as a service-account client; that
-client needs the `view-users` role from the `realm-management` client.
+Authenticates as a service-account client (client_credentials grant) and
+talks to the Keycloak Admin REST API. Shared by the notification function
+(email lookup) and user-service (account deletion).
+
+The service account needs the relevant `realm-management` client roles:
+`view-users` for lookups, `manage-users` to delete.
 """
 from __future__ import annotations
 
@@ -66,3 +69,27 @@ def get_user_email(user_id: str) -> str | None:
         )
     resp.raise_for_status()
     return resp.json().get("email")
+
+
+def delete_user(user_id: str) -> bool:
+    """Delete a Keycloak user. Returns False if the user didn't exist.
+
+    Requires the service account to have `manage-users`.
+    """
+    resp = requests.delete(
+        f"{KC_URL}/admin/realms/{KC_REALM}/users/{user_id}",
+        headers={"Authorization": f"Bearer {_admin_token()}"},
+        timeout=5,
+    )
+    if resp.status_code == 401:
+        # Token may have been revoked — bust cache and retry once.
+        _token_cache["access_token"] = None
+        resp = requests.delete(
+            f"{KC_URL}/admin/realms/{KC_REALM}/users/{user_id}",
+            headers={"Authorization": f"Bearer {_admin_token()}"},
+            timeout=5,
+        )
+    if resp.status_code == 404:
+        return False
+    resp.raise_for_status()
+    return True

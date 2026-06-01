@@ -5,7 +5,7 @@ import os
 
 import functions_framework
 
-from keycloak import get_user_email
+from cf_keycloak import get_user_email
 from notifier import send_notification
 
 logging.basicConfig(level=os.environ.get("LOG_LEVEL", "INFO"))

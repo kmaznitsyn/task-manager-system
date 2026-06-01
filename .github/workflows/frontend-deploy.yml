@@ -1,5 +1,10 @@
 name: frontend-deploy
 
+# Training/practice workflow — does NOT push to a registry or deploy anywhere.
+# Verifies the production Docker image builds successfully on push to main.
+# To enable real cloud deploy: uncomment the `permissions:` block and the
+# commented steps below, then comment out the local smoke-test step.
+
 on:
   push:
     branches: [main]
@@ -7,39 +12,51 @@ on:
       - 'frontend/taskmanager-ui/**'
       - '.github/workflows/frontend-deploy.yml'
 
-permissions:
-  contents: read
-  id-token: write   # required for WIF
+# permissions:
+#   contents: read
+#   id-token: write   # required for WIF
 
 jobs:
-  build-and-push:
+  build-image:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: google-github-actions/auth@v2
-        with:
-          workload_identity_provider: projects/578910743970/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account: artifact-pusher@still-function-494322-d7.iam.gserviceaccount.com
-
-      - uses: google-github-actions/setup-gcloud@v2
-
-      - run: gcloud auth configure-docker europe-west3-docker.pkg.dev
-
-      - name: Build & push image
+      - name: Docker build (no push)
         working-directory: frontend/taskmanager-ui
-        run: |
-          gcloud builds submit \
-            --tag europe-west3-docker.pkg.dev/still-function-494322-d7/taskmanager/taskmanager-ui:${{ github.sha }} \
-            --region=europe-west3 \
-            --default-buckets-behavior=REGIONAL_USER_OWNED_BUCKET \
-            --service-account=projects/still-function-494322-d7/serviceAccounts/artifact-pusher@still-function-494322-d7.iam.gserviceaccount.com
+        run: docker build -t taskmanager-ui:${{ github.sha }} .
 
-      - name: Deploy to Cloud Run
+      - name: Smoke test — container starts and serves
         run: |
-          gcloud run deploy taskmanager-ui \
-            --image europe-west3-docker.pkg.dev/still-function-494322-d7/taskmanager/taskmanager-ui:${{ github.sha }} \
-            --region europe-west3 \
-            --platform managed \
-            --port 80 \
-            --allow-unauthenticated
+          docker run -d --rm --name ui -p 8080:80 taskmanager-ui:${{ github.sha }}
+          sleep 3
+          curl -fsS http://localhost:8080/ > /dev/null
+          docker stop ui
+
+      # --- Cloud deploy (disabled for local training) -------------------------
+      # - uses: google-github-actions/auth@v2
+      #   with:
+      #     workload_identity_provider: projects/578910743970/locations/global/workloadIdentityPools/github-pool/providers/github-provider
+      #     service_account: artifact-pusher@still-function-494322-d7.iam.gserviceaccount.com
+      #
+      # - uses: google-github-actions/setup-gcloud@v2
+      #
+      # - run: gcloud auth configure-docker europe-west3-docker.pkg.dev
+      #
+      # - name: Build & push image
+      #   working-directory: frontend/taskmanager-ui
+      #   run: |
+      #     gcloud builds submit \
+      #       --tag europe-west3-docker.pkg.dev/still-function-494322-d7/taskmanager/taskmanager-ui:${{ github.sha }} \
+      #       --region=europe-west3 \
+      #       --default-buckets-behavior=REGIONAL_USER_OWNED_BUCKET \
+      #       --service-account=projects/still-function-494322-d7/serviceAccounts/artifact-pusher@still-function-494322-d7.iam.gserviceaccount.com
+      #
+      # - name: Deploy to Cloud Run
+      #   run: |
+      #     gcloud run deploy taskmanager-ui \
+      #       --image europe-west3-docker.pkg.dev/still-function-494322-d7/taskmanager/taskmanager-ui:${{ github.sha }} \
+      #       --region europe-west3 \
+      #       --platform managed \
+      #       --port 80 \
+      #       --allow-unauthenticated

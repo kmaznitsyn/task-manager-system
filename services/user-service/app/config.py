@@ -10,6 +10,17 @@ class Settings(BaseSettings):
     keycloak_audience: str = "taskmanager-api"
     keycloak_jwks_url: str = "http://localhost:8080/realms/taskmanager/protocol/openid-connect/certs"
 
+    # Keycloak Admin API (service account, grant_type=client_credentials)
+    keycloak_server_url: str = "http://localhost:8080"
+    keycloak_realm: str = "taskmanager"
+    keycloak_admin_client_id: str = "user-service"
+    keycloak_admin_client_secret: str = ""
+
+    # Pub/Sub — disabled by default for local dev. Either set
+    # PUBSUB_EMULATOR_HOST (emulator), or PUBSUB_ENABLED=1 (real GCP).
+    pubsub_enabled: bool = False
+    pubsub_project_id: str = "local-dev"
+
     cors_origins: list[str] = ["http://localhost:4200", "https://taskmanager-ui-578910743970.europe-west3.run.app"]
 
     class Config:

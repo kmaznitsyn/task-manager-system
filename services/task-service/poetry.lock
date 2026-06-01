@@ -58,7 +58,6 @@ files = [
 
 [package.dependencies]
 idna = ">=2.8"
-typing_extensions = {version = ">=4.5", markers = "python_version < \"3.13\""}
 
 [package.extras]
 trio = ["trio (>=0.32.0)"]
@@ -92,7 +91,7 @@ name = "cf-auth"
 version = "0.1.0"
 description = ""
 optional = false
-python-versions = ">=3.12"
+python-versions = ">=3.13"
 groups = ["main"]
 files = []
 develop = true
@@ -507,10 +506,7 @@ grpcio-status = [
     {version = ">=1.75.1,<2.0.0", optional = true, markers = "python_version >= \"3.14\" and extra == \"grpc\""},
     {version = ">=1.49.1,<2.0.0", optional = true, markers = "python_version >= \"3.11\" and extra == \"grpc\""},
 ]
-proto-plus = [
-    {version = ">=1.25.0,<2.0.0", markers = "python_version >= \"3.13\""},
-    {version = ">=1.22.3,<2.0.0"},
-]
+proto-plus = {version = ">=1.25.0,<2.0.0", markers = "python_version >= \"3.13\""}
 protobuf = ">=4.25.8,<8.0.0"
 requests = ">=2.20.0,<3.0.0"
 
@@ -566,10 +562,7 @@ grpcio = {version = ">=1.51.3,<2.0.0", markers = "python_version < \"3.14\""}
 grpcio-status = ">=1.33.2"
 opentelemetry-api = ">=1.27.0"
 opentelemetry-sdk = ">=1.27.0"
-proto-plus = [
-    {version = ">=1.25.0,<2.0.0", markers = "python_version >= \"3.13\""},
-    {version = ">=1.22.3,<2.0.0", markers = "python_version < \"3.13\""},
-]
+proto-plus = {version = ">=1.25.0,<2.0.0", markers = "python_version >= \"3.13\""}
 protobuf = ">=4.25.8,<8.0.0"
 
 [package.extras]
@@ -1196,7 +1189,6 @@ files = [
 
 [package.dependencies]
 psycopg-binary = {version = "3.3.3", optional = true, markers = "implementation_name != \"pypy\" and extra == \"binary\""}
-typing-extensions = {version = ">=4.6", markers = "python_version < \"3.13\""}
 tzdata = {version = "*", markers = "sys_platform == \"win32\""}
 
 [package.extras]
@@ -1546,7 +1538,6 @@ files = [
 
 [package.dependencies]
 pytest = ">=8.2,<10"
-typing-extensions = {version = ">=4.12", markers = "python_version < \"3.13\""}
 
 [package.extras]
 docs = ["sphinx (>=5.3)", "sphinx-rtd-theme (>=1)"]
@@ -1718,7 +1709,7 @@ description = "Pure-Python RSA implementation"
 optional = false
 python-versions = "<4,>=3.6"
 groups = ["main"]
-markers = "python_version < \"3.14\""
+markers = "python_version == \"3.13\""
 files = [
     {file = "rsa-4.9.1-py3-none-any.whl", hash = "sha256:68635866661c6836b8d39430f97a996acbd61bfa49406748ea243539fe239762"},
     {file = "rsa-4.9.1.tar.gz", hash = "sha256:e7bdbfdb5497da4c07dfd35530e1a902659db6ff241e39d9953cad06ebd0ae75"},
@@ -1884,7 +1875,6 @@ files = [
 
 [package.dependencies]
 anyio = ">=3.6.2,<5"
-typing-extensions = {version = ">=4.10.0", markers = "python_version < \"3.13\""}
 
 [package.extras]
 full = ["httpx (>=0.27.0,<0.29.0)", "itsdangerous", "jinja2", "python-multipart (>=0.0.18)", "pyyaml"]
@@ -2256,5 +2246,5 @@ dev = ["pytest", "pytest-asyncio", "ruff"]
 
 [metadata]
 lock-version = "2.1"
-python-versions = ">=3.12"
-content-hash = "2284191f168415c3bb51db0770c5d91c7813ddceccd0e7d18ef36f47ce80974a"
+python-versions = ">=3.13"
+content-hash = "8f9c777d84d6126a242859676ab78dde461de1f4b8ca3b9a768f4a4f516d7540"

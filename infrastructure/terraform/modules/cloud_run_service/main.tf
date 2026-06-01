@@ -19,8 +19,8 @@ variable "service_account" {
   default     = null
 }
 variable "connector" {
-    type    = string
-    default = null
+  type    = string
+  default = null
 }
 
 resource "google_cloud_run_v2_service" "this" {
@@ -74,8 +74,8 @@ resource "google_cloud_run_v2_service" "this" {
     }
 
     vpc_access {
-    connector = var.connector
-    egress    = "PRIVATE_RANGES_ONLY"
+      connector = var.connector
+      egress    = "PRIVATE_RANGES_ONLY"
     }
   }
 }
@@ -92,4 +92,12 @@ resource "google_cloud_run_v2_service_iam_member" "public" {
 
 output "url" {
   value = google_cloud_run_v2_service.this.uri
+}
+
+output "name" {
+  value = google_cloud_run_v2_service.this.name
+}
+
+output "location" {
+  value = google_cloud_run_v2_service.this.location
 }

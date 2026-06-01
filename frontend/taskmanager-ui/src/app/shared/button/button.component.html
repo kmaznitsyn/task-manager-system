@@ -1,0 +1,24 @@
+<button
+  [type]="type"
+  class="app-btn"
+  [class.app-btn--primary]="variant === 'primary'"
+  [class.app-btn--secondary]="variant === 'secondary'"
+  [class.app-btn--outline]="variant === 'outline'"
+  [class.app-btn--danger]="variant === 'danger'"
+  [class.app-btn--ghost]="variant === 'ghost'"
+  [class.app-btn--sm]="size === 'sm'"
+  [class.app-btn--md]="size === 'md'"
+  [class.app-btn--lg]="size === 'lg'"
+  [class.app-btn--full]="fullWidth"
+  [class.app-btn--loading]="loading"
+  [disabled]="disabled || loading"
+  [attr.aria-busy]="loading || null"
+>
+  @if (loading) {
+    <span class="app-btn__spinner" aria-hidden="true"></span>
+  }
+  @if (icon && !loading) {
+    <span class="app-btn__icon" aria-hidden="true">{{ icon }}</span>
+  }
+  <span class="app-btn__label"><ng-content></ng-content></span>
+</button>

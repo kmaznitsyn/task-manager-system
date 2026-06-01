@@ -54,5 +54,10 @@ terraform.tfvars
 service-account*.json
 credentials*.json
 
+# ---------- Vendored shared packages ----------
+# cf_keycloak is copied into the function source at build time (deploy uploads
+# only that dir). Source of truth stays in packages/keycloak.
+cloud-functions/notification/cf_keycloak/
+
 # ---------- Logs ----------
 *.log

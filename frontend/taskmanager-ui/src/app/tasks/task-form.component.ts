@@ -3,6 +3,7 @@ import { Component, OnInit, computed, inject, signal } from '@angular/core';
 import {
   AbstractControl,
   FormBuilder,
+  FormsModule,
   ReactiveFormsModule,
   ValidationErrors,
   Validators,
@@ -11,7 +12,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { TaskInput, TaskStatus } from './task.model';
 import { TasksService } from './tasks.service';
-import { UiButtonComponent, UiHeadingComponent, UiTextComponent } from '../ui';
+import { ButtonComponent } from '../shared/button/button.component';
 
 const STATUSES: readonly TaskStatus[] = ['todo', 'doing', 'done'];
 
@@ -29,10 +30,9 @@ function notBlank(control: AbstractControl): ValidationErrors | null {
   imports: [
     CommonModule,
     ReactiveFormsModule,
+    FormsModule,
     RouterLink,
-    UiButtonComponent,
-    UiHeadingComponent,
-    UiTextComponent,
+    ButtonComponent,
   ],
   templateUrl: './task-form.component.html',
   styleUrl: './task-form.component.scss',
@@ -58,7 +58,38 @@ export class TaskFormComponent implements OnInit {
     due_date: [''],
   });
 
+  readonly labels = signal<string[]>([]);
+  readonly labelSuggestions = signal<string[]>([]);
+  labelDraft = '';
+
+  /** Known labels not already attached — fed to the <datalist>. */
+  readonly availableSuggestions = computed(() => {
+    const picked = new Set(this.labels().map((l) => l.toLowerCase()));
+    return this.labelSuggestions().filter((s) => !picked.has(s.toLowerCase()));
+  });
+
+  addLabel(): void {
+    const name = this.labelDraft.trim();
+    this.labelDraft = '';
+    if (!name || name.length > 50) return;
+    const exists = this.labels().some(
+      (l) => l.toLowerCase() === name.toLowerCase(),
+    );
+    if (!exists) {
+      this.labels.update((ls) => [...ls, name]);
+    }
+  }
+
+  removeLabel(name: string): void {
+    this.labels.update((ls) => ls.filter((l) => l !== name));
+  }
+
   ngOnInit(): void {
+    this.tasks.labels().subscribe({
+      next: (ls) => this.labelSuggestions.set(ls.map((l) => l.name)),
+      error: () => {}, // autocomplete is a nicety; ignore if it fails
+    });
+
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.id.set(id);
@@ -78,6 +109,7 @@ export class TaskFormComponent implements OnInit {
       description: description === '' ? null : description,
       status: raw.status,
       due_date: raw.due_date === '' ? null : raw.due_date,
+      labels: this.labels(),
     };
 
     this.state.set('saving');
@@ -107,6 +139,7 @@ export class TaskFormComponent implements OnInit {
           status: t.status,
           due_date: t.due_date ?? '',
         });
+        this.labels.set(t.labels.map((l) => l.name));
         this.state.set('idle');
       },
       error: (err: unknown) => {

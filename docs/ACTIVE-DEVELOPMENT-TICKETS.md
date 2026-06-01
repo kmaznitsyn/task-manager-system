@@ -28,11 +28,11 @@ Today `DELETE /tasks/{id}` hard-deletes. Replace with soft-delete to support und
 - New query param `GET /tasks?include_deleted=true` (owner only).
 - Soft-deleted tasks remain owned by `owner_sub`; ownership rules unchanged.
 **Acceptance criteria**
-- [ ] Alembic migration up/down clean
-- [ ] DELETE returns 204 and the task no longer appears in `GET /tasks`
-- [ ] Restore returns 200 + the task reappears
-- [ ] Cross-user restore returns 404 (consistency with read rules)
-- [ ] Unit tests cover all four paths
+- [x] Alembic migration up/down clean
+- [x] DELETE returns 204 and the task no longer appears in `GET /tasks`
+- [x] Restore returns 200 + the task reappears
+- [x] Cross-user restore returns 404 (consistency with read rules)
+- [x] Unit tests cover all four paths
 
 ---
 
@@ -334,6 +334,126 @@ Today every authenticated user can hit every endpoint. Introduce roles for futur
 
 ---
 
+## Epic E — Logistics documents (docs-service)
+
+`services/docs-service` + frontend `/documents` were scaffolded with the minimum
+necessary slice: per-owner CRUD, a deterministic regex-based extraction stub
+(`app/processing.py`), and Pub/Sub on `documents-events`. These tickets harden
+and extend that slice. Same invariants as the other services apply:
+- `_owned_document_or_404` returns **404**, never 403.
+- `_publish_safe` never fails the HTTP response on Pub/Sub errors.
+- `cf-auth` is still the single source of truth for JWT validation.
+
+---
+
+### TM-59 · docs-service: integration tests on real Postgres
+**Type:** Chore · **Estimate:** 3h
+The service is unit-tested against SQLite only — the `JSONB` column for `extracted`
+falls back to `JSON` and the native enums to `VARCHAR`, so the SQLite test path
+does not exercise the actual production schema.
+- Add a `-m integration` tier mirroring `user-service`: testcontainers Postgres,
+  Alembic `upgrade head`, real `JSONB` round-trip on `extracted`.
+- Cover the doc_type enum and the `failed → processed` re-run path against Postgres.
+**Acceptance criteria**
+- [ ] `pytest -m integration` green against a containerised Postgres
+- [ ] One assertion that `extracted` is queryable via a `JSONB` operator (`->>`)
+- [ ] Migration up/down clean (verify with `alembic downgrade -1 && upgrade head`)
+
+---
+
+### TM-60 · Async background processing
+**Type:** Feature · **Estimate:** 6h
+**Depends on:** TM-59
+Today `POST /documents/{id}/process` blocks the request thread while the (cheap)
+extractor runs. A real OCR/LLM pipeline can take seconds — make processing async
+without changing the public API surface.
+- `POST /documents` → row in `received`. **Background worker** (FastAPI
+  `BackgroundTasks` for the first step; pluggable Cloud Tasks/Pub/Sub-driven worker
+  for prod) picks it up, flips to `processing`, runs extraction, lands in
+  `processed` / `failed`.
+- Keep `POST /documents/{id}/process` as a manual re-trigger (idempotent: 409 if
+  already `processed`, allowed from `failed` or `received`).
+- Add `?status=processing` filter to `GET /documents` for the UI to poll.
+**Acceptance criteria**
+- [ ] Creating a document returns 201 immediately, never blocks on extraction
+- [ ] A test inserts a `received` doc, runs the worker tick, asserts terminal status
+- [ ] Status transitions are documented in `docs-service/README.md`
+
+---
+
+### TM-61 · Pluggable extractor backend (OCR / LLM)
+**Type:** Feature · **Estimate:** 8h
+**Depends on:** TM-60
+`app/processing.py` is a deterministic regex stub on purpose. Lift it behind an
+interface so it can be swapped for a real extractor.
+- `Extractor` protocol: `extract(doc_type, raw_text | raw_bytes) -> dict`.
+- Two implementations shipped: `RegexExtractor` (current behaviour, default in dev
+  and tests) and `VertexAIExtractor` (uses Vertex AI / Document AI, gated by
+  `EXTRACTOR_BACKEND=vertex`).
+- Add a `mime_type` column + `raw_bytes` storage (GCS reference, not blob in
+  Postgres) for binary uploads — `raw_text` stays for paste-in flow.
+- No-op for SQLite tests: backend defaults to `regex`.
+**Acceptance criteria**
+- [ ] Switching `EXTRACTOR_BACKEND` does not require code changes outside `processing/`
+- [ ] Existing tests still green with `regex` default
+- [ ] Vertex backend behind a feature flag; not exercised in CI
+
+---
+
+### TM-62 · `notification` Cloud Function subscribes to `documents-events`
+**Type:** Feature · **Estimate:** 3h
+**Depends on:** TM-36
+`docs-service` publishes `document.processed` / `document.failed` but nothing
+consumes them. Reuse the existing notification function so the user gets the same
+email/in-app channel as for tasks.
+- Add a second Pub/Sub trigger in Terraform: subscription on `documents-events`
+  → same Cloud Function entry point with a `kind=document` discriminator.
+- Function distinguishes payload shape by `type` (already `document.*` vs `task.*`).
+- Malformed payloads: ack-and-drop (same policy as today). Real failures: re-raise
+  for retry. Don't change the retry/DLQ contract.
+**Acceptance criteria**
+- [ ] Local emulator: publishing `document.processed` invokes the function with
+      a `document_id` in the payload
+- [ ] Function tests cover both event families
+- [ ] DLQ (TM-36) catches a malformed `document.*` event after 5 tries
+
+---
+
+### TM-63 · Frontend: document detail route + re-process / extracted view
+**Type:** Feature · **Estimate:** 4h
+**Depends on:** TM-60
+Today `/documents` is one list view; the extracted fields are shown inline in
+each row's card, which is OK for two or three documents but cramped at scale.
+- Route `/documents/:id`: full extracted fields, raw text (collapsed), audit
+  metadata, status timeline.
+- Re-process button calls `POST /documents/{id}/process`; UI optimistically flips
+  status to `processing` and polls via `?status=processing` until terminal.
+- Delete moves to a confirmation modal (matches the `confirm()` removal in TM-40).
+**Acceptance criteria**
+- [ ] Deep link `/documents/<uuid>` works after a hard refresh
+- [ ] 404 from API → empty-state "Document not found", route does not crash
+- [ ] Polling stops as soon as status is `processed` or `failed`
+
+---
+
+### TM-64 · File upload (PDF / image) instead of paste-in `raw_text`
+**Type:** Feature · **Estimate:** 6h
+**Depends on:** TM-61
+Real users have PDFs and scans, not pre-OCR'd text. Add binary upload.
+- Frontend: `<input type="file">` on the create form, drag-and-drop zone.
+  Multipart POST to `/documents` with `file` field + JSON metadata.
+- Backend: upload goes to a GCS bucket per env (`docs-uploads-<env>`), DB stores
+  the GCS URI in a new `source_uri` column.
+- `RegexExtractor` keeps reading `raw_text`; `VertexAIExtractor` (TM-61) reads
+  bytes from GCS.
+- Size limit 10 MB enforced at the API gateway; problem+json (TM-34) on overflow.
+**Acceptance criteria**
+- [ ] Uploading a PDF returns 201 with `source_uri` set, `raw_text` empty
+- [ ] Bucket has a 30-day lifecycle rule (defined in Terraform)
+- [ ] Tests cover happy path + oversize rejection
+
+---
+
 ## Backlog / Nice-to-have (post-MVP)
 
 - **TM-51** OpenTelemetry tracing across services + Cloud Trace export
@@ -354,3 +474,4 @@ Sprint 2 (features): TM-28, TM-29, TM-30, TM-32
 Sprint 3 (frontend catch-up): TM-40, TM-41, TM-42, TM-44
 Sprint 4 (hardening + ops): TM-35, TM-36, TM-39, TM-47
 Sprint 5 (env separation): TM-48, TM-49, TM-50
+Sprint 6 (docs-service): TM-59, TM-60, TM-62, TM-63 (TM-61 + TM-64 follow once a real extractor is selected)

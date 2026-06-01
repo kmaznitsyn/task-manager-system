@@ -1,0 +1,102 @@
+<section class="docs">
+  <header class="docs__header">
+    <div>
+      <h2 class="docs__title">Logistics Documents</h2>
+      <p class="docs__subtitle">Manage bills of lading, manifests, invoices, and more</p>
+    </div>
+    <div class="docs__actions">
+      <app-button variant="ghost" size="sm" (click)="load()" [disabled]="state() === 'loading'">
+        Refresh
+      </app-button>
+      <app-button routerLink="/documents/new" icon="&#128196;">
+        New document
+      </app-button>
+    </div>
+  </header>
+
+  @switch (state()) {
+    @case ('loading') {
+      <div class="state-card fade-in" role="status" aria-live="polite">
+        <div class="state-card__spinner"></div>
+        <p class="state-card__text">Loading documents...</p>
+      </div>
+    }
+
+    @case ('error') {
+      <div class="state-card fade-in" role="alert">
+        <p class="state-card__text state-card__text--error">{{ error() }}</p>
+        <app-button (click)="load()">Retry</app-button>
+      </div>
+    }
+
+    @case ('loaded') {
+      @if (items().length === 0) {
+        <div class="state-card fade-in">
+          <div class="state-card__icon">&#128196;</div>
+          <p class="state-card__text">No documents yet</p>
+          <p class="state-card__hint">Submit a Bill of Lading, invoice, or manifest to get started.</p>
+          <app-button routerLink="/documents/new">Create document</app-button>
+        </div>
+      } @else {
+        <div class="doc-grid">
+          @for (d of items(); track d.id) {
+            <div class="doc-card fade-in-up">
+              <div class="doc-card__top">
+                <div class="doc-card__type-wrap">
+                  <span class="type-badge" [attr.data-type]="d.doc_type">
+                    {{ typeLabels[d.doc_type] }}
+                  </span>
+                  <span class="status-badge" [attr.data-status]="d.status">
+                    {{ d.status }}
+                  </span>
+                </div>
+              </div>
+
+              <h3 class="doc-card__ref">{{ d.reference_number }}</h3>
+              @if (d.shipment_ref) {
+                <p class="doc-card__shipment">Shipment: {{ d.shipment_ref }}</p>
+              }
+
+              @if (d.status === 'processed' && d.extracted) {
+                <dl class="doc-card__fields">
+                  @for (entry of d.extracted | keyvalue; track entry.key) {
+                    <div class="doc-card__field-item">
+                      <dt>{{ entry.key }}</dt>
+                      <dd>{{ entry.value }}</dd>
+                    </div>
+                  }
+                </dl>
+              }
+
+              @if (d.status === 'failed' && d.failure_reason) {
+                <div class="doc-card__error">
+                  {{ d.failure_reason }}
+                </div>
+              }
+
+              <footer class="doc-card__footer">
+                <span class="doc-card__date">
+                  Submitted {{ d.created_at | date: 'medium' }}
+                </span>
+                <div class="doc-card__row-actions">
+                  @if (d.status === 'received' || d.status === 'failed') {
+                    <app-button variant="outline" size="sm"
+                      (click)="process(d)"
+                      [loading]="busyId() === d.id">
+                      {{ d.status === 'failed' ? 'Retry' : 'Process' }}
+                    </app-button>
+                  }
+                  <app-button variant="danger" size="sm"
+                    (click)="remove(d)"
+                    [disabled]="busyId() === d.id">
+                    Delete
+                  </app-button>
+                </div>
+              </footer>
+            </div>
+          }
+        </div>
+      }
+    }
+  }
+</section>

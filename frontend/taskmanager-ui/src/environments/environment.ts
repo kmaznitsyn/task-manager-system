@@ -10,5 +10,6 @@ export const environment = {
   api: {
     userService: 'http://localhost:8001',
     taskService: 'http://localhost:8002',
+    docsService: 'http://localhost:8003',
   },
 };

@@ -1,37 +1,62 @@
 name: notification-deploy
 
+# Training/practice workflow — does NOT deploy to Cloud Functions.
+# Boots the function locally via functions-framework and pings it,
+# proving the package is importable and the entry point is wired correctly.
+#
+# The REAL deploy is Terraform: modules/notification_function zips this dir
+# (after vendoring cf_keycloak) and ships it as google_cloudfunctions2_function.
+# Do NOT add a `gcloud functions deploy` here — it would fight Terraform for
+# ownership of the same function.
+
 on:
   push:
     branches: [main]
     paths:
       - 'cloud-functions/notification/**'
+      - 'packages/keycloak/**'
       - '.github/workflows/notification-deploy.yml'
 
-permissions:
-  contents: read
-  id-token: write   # required for WIF
+defaults:
+  run:
+    working-directory: cloud-functions/notification
 
 jobs:
-  deploy:
+  smoke-test:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
-      - uses: google-github-actions/auth@v2
+      - uses: actions/setup-python@v5
         with:
-          workload_identity_provider: projects/578910743970/locations/global/workloadIdentityPools/github-pool/providers/github-provider
-          service_account: artifact-pusher@still-function-494322-d7.iam.gserviceaccount.com
+          python-version: '3.13'
 
-      - uses: google-github-actions/setup-gcloud@v2
-
-      - name: Deploy Cloud Function (Gen2)
-        # Gen2 functions are Cloud Run under the hood; gcloud uploads the source,
-        # builds via Cloud Build, and wires the Pub/Sub trigger to `tasks-events`.
+      - name: Vendor cf_keycloak
+        # requirements.txt no longer installs the shared package; mirror what
+        # Terraform does at build time so the import below resolves.
         run: |
-          gcloud functions deploy notification \
-            --gen2 \
-            --runtime=python312 \
-            --region=europe-west3 \
-            --source=cloud-functions/notification \
-            --entry-point=handle_task_event \
-            --trigger-topic=tasks-events
+          rm -rf cf_keycloak
+          cp -R ../../packages/keycloak/src/cf_keycloak ./cf_keycloak
+
+      - name: Install deps
+        run: pip install -r requirements.txt
+
+      - name: Import-check the entry point
+        run: python -c "from main import handle_task_event; print('entry point loaded:', handle_task_event)"
+
+      - name: Start functions-framework and ping it
+        run: |
+          functions-framework --target=handle_task_event --signature-type=cloudevent --port=8080 &
+          FF_PID=$!
+          sleep 3
+          curl -fsS -X POST http://localhost:8080/ \
+            -H "Content-Type: application/json" \
+            -H "ce-id: test-1" \
+            -H "ce-specversion: 1.0" \
+            -H "ce-type: google.cloud.pubsub.topic.v1.messagePublished" \
+            -H "ce-source: //pubsub.googleapis.com/projects/local/topics/tasks-events" \
+            -d '{"message":{"data":""}}' || true
+          kill $FF_PID
+
+      # No cloud deploy step here on purpose — Terraform
+      # (modules/notification_function) owns the real deploy. See header.

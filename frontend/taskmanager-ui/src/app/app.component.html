@@ -1,6 +1,12 @@
 <nav>
+  <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }">Home</a>
   <a routerLink="/tasks" routerLinkActive="active">Tasks</a>
-  <button uiButton variant="ghost" routerLink="/logout">Logout</button>
+  <a routerLink="/documents" routerLinkActive="active">Documents</a>
+  <a routerLink="/profile" routerLinkActive="active">Profile</a>
+  @if (isAdmin) {
+    <a routerLink="/admin" routerLinkActive="active">Admin</a>
+  }
+  <app-button variant="danger" size="sm" routerLink="/logout">Logout</app-button>
 </nav>
 
 <router-outlet></router-outlet>

@@ -16,7 +16,7 @@ def _cloud_event(payload: dict) -> SimpleNamespace:
 @pytest.fixture
 def handle(monkeypatch):
     """Import the handler with Keycloak + SendGrid stubbed out."""
-    import keycloak as kc_module
+    import cf_keycloak as kc_module
     import notifier as notif_module
     import main as main_module
 
